@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Metas Financieras</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* shadow-lg */
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb; /* border-gray-200 */
+        }
+        th {
+            background-color: #f9fafb; /* bg-gray-50 */
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        tbody tr:hover {
+            background-color: #f3f4f6; /* hover:bg-gray-100 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-gray-800">Planificador de Metas de Ahorro</h1>
+            <p class="text-lg text-gray-600 mt-2">Visualiza y alcanza tus objetivos financieros.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Columna de Metas y Controles -->
+            <div class="lg:col-span-1 space-y-8">
+                <div class="card">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">Tus Metas Financieras</h2>
+                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li><span class="font-medium">Retiro Digno:</span> $13,500,000 MXN en 37 años.</li>
+                        <li><span class="font-medium">Educación Hijos (EE.UU.):</span> $8,400,000 MXN en 20 años.</li>
+                        <li><span class="font-medium">Viajes:</span> $140,000 MXN en 4 años.</li>
+                        <li><span class="font-medium">Impulsar Inversiones:</span> $24,000 MXN en 1 año.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h2 class="text-xl font-semibold mb-2 text-gray-700">Controles</h2>
+                    <div class="p-3 bg-blue-50 rounded-lg text-blue-800">
+                        <p class="text-sm"><span class="font-semibold">Rendimiento real anual considerado:</span> 6% (10% nominal - 4% inflación).</p>
+                        <div class="mt-4">
+                            <label for="availableSavings" class="block text-blue-800 font-semibold mb-1">Ahorro mensual disponible:</label>
+                            <input type="number" id="availableSavings" value="6500" min="0" step="100"
+                                   class="w-full p-2 border border-blue-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna de Gráficas Principales -->
+            <div class="lg:col-span-2 card">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Ahorro Mensual Necesario vs. Disponible</h2>
+                <div class="relative h-96">
+                    <canvas id="monthlySavingsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Ahorro Acumulado Total Necesario</h2>
+                <div class="relative h-96">
+                    <canvas id="accumulatedSavingsChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Desglose de Ahorro Anual por Meta</h2>
+                <div class="relative h-96">
+                    <canvas id="goalBreakdownChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Detalle de Ahorro Año por Año</h2>
+            <div class="overflow-x-auto">
+                <table id="savingsTable" class="min-w-full bg-white">
+                    <thead>
+                        <tr>
+                            <th>Año</th>
+                            <th>Ahorro Mensual (Retiro)</th>
+                            <th>Ahorro Mensual (Educación)</th>
+                            <th>Ahorro Mensual (Viajes)</th>
+                            <th>Ahorro Mensual (Inversiones)</th>
+                            <th>Total Mensual Necesario</th>
+                            <th>Total Acumulado Necesario</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- Las filas se llenarán con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIGURACIÓN INICIAL ---
+            const ANNUAL_REAL_RETURN = 0.06; // 6%
+            const MONTHLY_REAL_RETURN = ANNUAL_REAL_RETURN / 12;
+            const INFLATION_RATE = 0.04; // 4%
+            let availableMonthlySavings = 6500;
+
+            // --- DEFINICIÓN DE METAS ---
+            const goals = {
+                retirement: { name: 'Retiro', amount: 13500000, years: 37, monthlySavings: 14766, isFixed: true },
+                education: { name: 'Educación Hijos', amount: 8400000, years: 20, monthlySavings: 0 },
+                travel: { name: 'Viajes', amount: 140000, years: 4, monthlySavings: 0 },
+                investments: { name: 'Inversiones', amount: 24000, years: 1, monthlySavings: 0 }
+            };
+
+            let monthlyChart, accumulatedChart, breakdownChart;
+
+            // --- FUNCIONES DE CÁLCULO ---
+            function calculateMonthlyPayment(futureValue, monthlyRate, numberOfPeriods) {
+                if (numberOfPeriods <= 0) return 0;
+                if (monthlyRate === 0) return futureValue / numberOfPeriods;
+                const denominator = Math.pow(1 + monthlyRate, numberOfPeriods) - 1;
+                if (denominator === 0) return futureValue / numberOfPeriods;
+                const payment = futureValue * (monthlyRate / denominator);
+                return isNaN(payment) || !isFinite(payment) ? 0 : payment;
+            }
+
+            // --- FUNCIÓN PRINCIPAL DE ACTUALIZACIÓN ---
+            function updateFinancialData() {
+                // Calcular el ahorro mensual para las metas, excepto las que tienen un monto fijo
+                for (const key in goals) {
+                    if (!goals[key].isFixed) {
+                        goals[key].monthlySavings = calculateMonthlyPayment(goals[key].amount, MONTHLY_REAL_RETURN, goals[key].years * 12);
+                    }
+                }
+
+                const yearsData = [];
+                const labels = [];
+                const monthlySavingsAvailableArr = [];
+                const monthlySavingsNoReturnInflation = [];
+                const accumulatedSavingsTotal = [];
+                const annualGoalBreakdown = { retirement: [], education: [], travel: [], investments: [] };
+                const monthlyGoalBreakdown = { retirement: [], education: [], travel: [], investments: [] };
+
+                const maxYears = Math.max(...Object.values(goals).map(g => g.years));
+                let currentTotalAccumulatedSavings = 0;
+
+                for (let year = 1; year <= maxYears; year++) {
+                    labels.push(`Año ${year}`);
+
+                    const yearRetirementMonthly = (year <= goals.retirement.years) ? goals.retirement.monthlySavings : 0;
+                    const yearEducationMonthly = (year <= goals.education.years) ? goals.education.monthlySavings : 0;
+                    const yearTravelMonthly = (year <= goals.travel.years) ? goals.travel.monthlySavings : 0;
+                    const yearInvestmentsMonthly = (year <= goals.investments.years) ? goals.investments.monthlySavings : 0;
+                    
+                    monthlyGoalBreakdown.retirement.push(yearRetirementMonthly);
+                    monthlyGoalBreakdown.education.push(yearEducationMonthly);
+                    monthlyGoalBreakdown.travel.push(yearTravelMonthly);
+                    monthlyGoalBreakdown.investments.push(yearInvestmentsMonthly);
+                    
+                    annualGoalBreakdown.retirement.push(yearRetirementMonthly * 12);
+                    annualGoalBreakdown.education.push(yearEducationMonthly * 12);
+                    annualGoalBreakdown.travel.push(yearTravelMonthly * 12);
+                    annualGoalBreakdown.investments.push(yearInvestmentsMonthly * 12);
+
+                    const yearMonthlyTotalWithRealReturn = yearRetirementMonthly + yearEducationMonthly + yearTravelMonthly + yearInvestmentsMonthly;
+                    
+                    monthlySavingsAvailableArr.push(availableMonthlySavings * Math.pow(1 + ANNUAL_REAL_RETURN, year - 1));
+
+                    // Cálculos sin rendimiento, solo con inflación
+                    let totalMonthlyNoReturn = 0;
+                    for (const key in goals) {
+                        if (year <= goals[key].years) {
+                            if (goals[key].isFixed) {
+                                totalMonthlyNoReturn += goals[key].monthlySavings * Math.pow(1 + INFLATION_RATE, year - 1);
+                            } else {
+                                const inflatedGoal = goals[key].amount * Math.pow(1 + INFLATION_RATE, goals[key].years);
+                                totalMonthlyNoReturn += inflatedGoal / (goals[key].years * 12);
+                            }
+                        }
+                    }
+                    monthlySavingsNoReturnInflation.push(totalMonthlyNoReturn);
+
+                    // Cálculo de Ahorro Acumulado
+                    const annualContributionForAccumulation = yearMonthlyTotalWithRealReturn * 12;
+                    currentTotalAccumulatedSavings = (currentTotalAccumulatedSavings * (1 + ANNUAL_REAL_RETURN)) + annualContributionForAccumulation;
+                    accumulatedSavingsTotal.push(currentTotalAccumulatedSavings);
+
+                    yearsData.push({
+                        year,
+                        retirementMonthly: yearRetirementMonthly,
+                        educationMonthly: yearEducationMonthly,
+                        travelMonthly: yearTravelMonthly,
+                        investmentsMonthly: yearInvestmentsMonthly,
+                        totalMonthly: yearMonthlyTotalWithRealReturn,
+                        totalAccumulated: currentTotalAccumulatedSavings
+                    });
+                }
+
+                updateCharts(labels, monthlySavingsAvailableArr, monthlySavingsNoReturnInflation, accumulatedSavingsTotal, annualGoalBreakdown, monthlyGoalBreakdown);
+                populateTable(yearsData);
+            }
+            
+            // --- FUNCIONES DE RENDERIZADO (GRÁFICAS Y TABLA) ---
+            function updateCharts(labels, available, noReturn, accumulated, annualBreakdown, monthlyBreakdown) {
+                const chartOptions = (yAxisTitle, isStacked = false) => ({
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            stacked: isStacked,
+                            beginAtZero: true, 
+                            title: { display: true, text: yAxisTitle }, 
+                            ticks: { callback: value => `$${value.toLocaleString()}` } 
+                        },
+                        x: { 
+                            stacked: isStacked,
+                            title: { display: true, text: 'Año' } 
+                        }
+                    },
+                    plugins: { tooltip: { callbacks: { label: context => `${context.dataset.label || ''}: $${context.parsed.y.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` } } }
+                });
+
+                // Gráfica de Ahorro Mensual (Área Apilada)
+                const monthlyDatasets = [
+                    { label: 'Retiro', data: monthlyBreakdown.retirement, backgroundColor: 'rgba(14, 165, 233, 0.7)', borderColor: '#0EA5E9', fill: true, tension: 0.2, pointRadius: 0 },
+                    { label: 'Educación', data: monthlyBreakdown.education, backgroundColor: 'rgba(236, 72, 153, 0.7)', borderColor: '#EC4899', fill: true, tension: 0.2, pointRadius: 0 },
+                    { label: 'Viajes', data: monthlyBreakdown.travel, backgroundColor: 'rgba(249, 115, 22, 0.7)', borderColor: '#F97316', fill: true, tension: 0.2, pointRadius: 0 },
+                    { label: 'Inversiones', data: monthlyBreakdown.investments, backgroundColor: 'rgba(250, 204, 21, 0.7)', borderColor: '#FACC15', fill: true, tension: 0.2, pointRadius: 0 },
+                    { label: 'Disponible (con rendimiento)', data: available, borderColor: '#10B981', fill: false, tension: 0.1 },
+                    { label: 'Necesario (sin rendimiento)', data: noReturn, borderColor: '#EF4444', fill: false, tension: 0.1, borderDash: [5, 5] }
+                ];
+
+                if (monthlyChart) {
+                    monthlyChart.data.labels = labels;
+                    monthlyChart.data.datasets.forEach((dataset, i) => {
+                        dataset.data = monthlyDatasets[i].data;
+                    });
+                    monthlyChart.update();
+                } else {
+                    const ctx = document.getElementById('monthlySavingsChart').getContext('2d');
+                    monthlyChart = new Chart(ctx, {
+                        type: 'line',
+                        data: { labels, datasets: monthlyDatasets },
+                        options: chartOptions('Monto Mensual (MXN)', true)
+                    });
+                }
+
+                // Gráfica de Ahorro Acumulado
+                if (accumulatedChart) {
+                    accumulatedChart.data.labels = labels;
+                    accumulatedChart.data.datasets[0].data = accumulated;
+                    accumulatedChart.update();
+                } else {
+                    const ctx = document.getElementById('accumulatedSavingsChart').getContext('2d');
+                    accumulatedChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels,
+                            datasets: [{ label: 'Ahorro Acumulado Total', data: accumulated, borderColor: '#8B5CF6', backgroundColor: '#EDE9FE', tension: 0.1, fill: true }]
+                        },
+                        options: chartOptions('Monto Acumulado (MXN)')
+                    });
+                }
+
+                // Gráfica de Desglose por Meta (Barras)
+                const annualDatasets = [
+                    { label: 'Retiro', data: annualBreakdown.retirement, backgroundColor: '#0EA5E9' },
+                    { label: 'Educación', data: annualBreakdown.education, backgroundColor: '#EC4899' },
+                    { label: 'Viajes', data: annualBreakdown.travel, backgroundColor: '#F97316' },
+                    { label: 'Inversiones', data: annualBreakdown.investments, backgroundColor: '#FACC15' }
+                ];
+
+                if (breakdownChart) {
+                    breakdownChart.data.labels = labels;
+                    breakdownChart.data.datasets.forEach((dataset, i) => {
+                        dataset.data = annualDatasets[i].data;
+                    });
+                    breakdownChart.update();
+                } else {
+                    const ctx = document.getElementById('goalBreakdownChart').getContext('2d');
+                    breakdownChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: { labels, datasets: annualDatasets },
+                        options: chartOptions('Ahorro Anual (MXN)', true)
+                    });
+                }
+            }
+
+            function populateTable(data) {
+                const tableBody = document.querySelector('#savingsTable tbody');
+                tableBody.innerHTML = '';
+                data.forEach(rowData => {
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td class="p-3">${rowData.year}</td>
+                        <td class="p-3">$${rowData.retirementMonthly.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="p-3">$${rowData.educationMonthly.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="p-3">$${rowData.travelMonthly.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="p-3">$${rowData.investmentsMonthly.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="p-3 font-semibold text-gray-800">$${(rowData.totalMonthly).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="p-3 font-semibold text-gray-800">$${rowData.totalAccumulated.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    `;
+                });
+            }
+
+            // --- EVENT LISTENER Y EJECUCIÓN INICIAL ---
+            document.getElementById('availableSavings').addEventListener('input', (event) => {
+                const newValue = parseFloat(event.target.value);
+                availableMonthlySavings = !isNaN(newValue) && newValue >= 0 ? newValue : 0;
+                updateFinancialData();
+            });
+
+            updateFinancialData();
+        });
+    </script>
+</body>
+</html>
